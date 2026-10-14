@@ -1,0 +1,98 @@
+name: Connected Energy - Enterprise DevSecOps CI
+
+# Manual-only until the dedicated runner is hardened and registered.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: connected-energy-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    name: Source and Infrastructure Security Gates
+    runs-on: [self-hosted, linux, x64, connected-energy]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify Terraform formatting
+        run: terraform fmt -check -recursive terraform
+
+      - name: Validate Terraform configuration
+        run: |
+          terraform -chdir=terraform init -backend=false -input=false
+          terraform -chdir=terraform validate
+
+      - name: Scan source code with Semgrep (SAST)
+        run: |
+          python -m pip install semgrep
+          semgrep scan --config p/security-audit --error .
+
+      - name: Scan for exposed secrets with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Scan Terraform and Kubernetes with Checkov
+        run: |
+          python -m pip install checkov
+          checkov --directory terraform --framework terraform --quiet --compact
+          checkov --directory k8s --framework kubernetes --quiet --compact
+
+      - name: Scan repository configuration with Trivy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+      - name: Scan dependencies with Trivy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+  build:
+    name: Container Build, Scan and SBOM
+    needs: security
+    runs-on: [self-hosted, linux, x64, connected-energy]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build application image
+        run: docker build --tag connected-energy:${{ github.sha }} .
+
+      - name: Scan built image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: connected-energy:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+      - name: Generate software bill of materials (SBOM)
+        uses: anchore/sbom-action@v0
+        with:
+          image: connected-energy:${{ github.sha }}
+          artifact-name: connected-energy-sbom.spdx.json
+
+# Later: Azure OIDC login, ACR push, Cosign signing, Helm/Argo CD and DAST.
