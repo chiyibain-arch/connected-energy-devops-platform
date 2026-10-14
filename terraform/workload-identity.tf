@@ -13,6 +13,6 @@ resource "azurerm_federated_identity_credential" "aks_app" {
   parent_id           = azurerm_user_assigned_identity.app_workload.id
 
   issuer   = module.aks.oidc_issuer_url
-  subject  = "system:serviceaccount:default:connected-energy-sa"
+  subject  = "system:serviceaccount:connected-energy-dev:connected-energy-sa"
   audience = ["api://AzureADTokenExchange"]
 }
