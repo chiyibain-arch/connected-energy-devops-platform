@@ -22,3 +22,8 @@ output "kubelet_identity_object_id" {
   description = "Object ID of the AKS kubelet identity, used to grant ACR pull access via RBAC"
   value       = azurerm_kubernetes_cluster.main.kubelet_identity[0].object_id
 }
+
+output "oidc_issuer_url" {
+  description = "OIDC issuer URL for AKS Workload Identity federation"
+  value       = azurerm_kubernetes_cluster.main.oidc_issuer_url
+}

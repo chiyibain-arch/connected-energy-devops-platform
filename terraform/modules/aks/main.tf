@@ -5,6 +5,10 @@ resource "azurerm_kubernetes_cluster" "main" {
   dns_prefix          = "aks-${var.project_name}-${var.environment}"
   kubernetes_version  = var.kubernetes_version
 
+  # Enable OIDC and Azure Workload Identity
+  oidc_issuer_enabled       = true
+  workload_identity_enabled = true
+
   default_node_pool {
     name            = "system"
     vm_size         = var.vm_size
@@ -14,7 +18,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     type            = "VirtualMachineScaleSets"
   }
 
-  # Managed identity only - no service principal client secrets are created.
+  # Managed identity: no service principal client secrets
   identity {
     type = "SystemAssigned"
   }
@@ -27,6 +31,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     load_balancer_sku = "standard"
   }
 
+  # Azure Monitor / Log Analytics integration
   oms_agent {
     log_analytics_workspace_id = var.log_analytics_workspace_id
   }
