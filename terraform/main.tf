@@ -69,3 +69,17 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
   principal_id                     = module.aks.kubelet_identity_object_id
   skip_service_principal_aad_check = true
 }
+
+# Dedicated GitHub Actions runner compute, isolated from AKS nodes.
+# This module creates the VM; agent registration is configured separately.
+module "github_runner" {
+  source = "./modules/github-runner"
+
+  project_name        = var.project_name
+  environment         = var.environment
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  subnet_id           = module.network.runner_subnet_id
+  ssh_public_key      = var.runner_ssh_public_key
+  tags                = var.tags
+}
