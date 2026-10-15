@@ -47,3 +47,10 @@ variable "tags" {
   description = "Common governance and ownership tags applied to Azure resources"
   type        = map(string)
 }
+
+# Public SSH key supplied securely at plan/apply time (never a private key).
+variable "runner_ssh_public_key" {
+  description = "OpenSSH public key for the GitHub runner VM administrator"
+  type        = string
+  sensitive   = true
+}
