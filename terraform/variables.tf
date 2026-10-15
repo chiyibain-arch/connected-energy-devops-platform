@@ -49,8 +49,15 @@ variable "tags" {
 }
 
 # Public SSH key supplied securely at plan/apply time (never a private key).
+variable "enable_github_runner" {
+  description = "Enable runner VM deployment only when credentials are ready"
+  type        = bool
+  default     = false
+}
+
 variable "runner_ssh_public_key" {
   description = "OpenSSH public key for the GitHub runner VM administrator"
   type        = string
   sensitive   = true
+  default     = ""
 }
