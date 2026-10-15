@@ -1,49 +1,61 @@
+# Connected Energy Platform - GitHub Actions runner VM infrastructure
+# This provisions a VM only. Runner agent registration and ephemeral cleanup
+# are separate lifecycle steps.
 
-# ==========================================================
-# CONNECTED ENERGY MONITORING PLATFORM
-# Module: GitHub Actions Self-Hosted Runner
-# File: variables.tf
-#
-# Purpose:
-# Define all configuration inputs required to provision
-# secure Azure Linux self-hosted runner infrastructure.
-# ==========================================================
+resource "azurerm_network_interface" "runner" {
+  name                = "nic-ghrunner-${var.project_name}-${var.environment}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = var.subnet_id
+    private_ip_address_allocation = "Dynamic"
+  }
 
-# ----------------------------------------------------------
-# 1. PROJECT NAME
-# ----------------------------------------------------------
+  tags = var.tags
+}
 
-# ----------------------------------------------------------
-# 2. DEPLOYMENT ENVIRONMENT
-# ----------------------------------------------------------
+resource "azurerm_linux_virtual_machine" "runner" {
+  name                            = "vm-ghrunner-${var.project_name}-${var.environment}"
+  resource_group_name             = var.resource_group_name
+  location                        = var.location
+  size                            = var.vm_size
+  admin_username                  = var.admin_username
+  disable_password_authentication = true
 
-# ----------------------------------------------------------
-# 3. AZURE REGION
-# ----------------------------------------------------------
+  network_interface_ids = [
+    azurerm_network_interface.runner.id
+  ]
 
-# ----------------------------------------------------------
-# 4. AZURE RESOURCE GROUP
-# ----------------------------------------------------------
+  admin_ssh_key {
+    username   = var.admin_username
+    public_key = var.ssh_public_key
+  }
 
-# ----------------------------------------------------------
-# 5. DEDICATED RUNNER SUBNET
-# ----------------------------------------------------------
+  identity {
+    type = "SystemAssigned"
+  }
 
-# ----------------------------------------------------------
-# 6. VIRTUAL MACHINE SIZE
-# ----------------------------------------------------------
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
 
-# ----------------------------------------------------------
-# 7. LINUX ADMINISTRATOR
-# ----------------------------------------------------------
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
 
-# ----------------------------------------------------------
-# 8. SSH PUBLIC KEY
-# ----------------------------------------------------------
+  custom_data = base64encode(<<-EOF
+    #!/bin/bash
+    set -euo pipefail
+    apt-get update -y
+    apt-get install -y curl git jq unzip ca-certificates
+  EOF
+  )
 
-# ----------------------------------------------------------
-# 9. ENTERPRISE RESOURCE TAGS
-# ----------------------------------------------------------
-
-
+  tags = var.tags
+}
