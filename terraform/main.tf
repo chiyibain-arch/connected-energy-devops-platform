@@ -73,6 +73,7 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
 # Dedicated GitHub Actions runner compute, isolated from AKS nodes.
 # This module creates the VM; agent registration is configured separately.
 module "github_runner" {
+  count  = var.enable_github_runner ? 1 : 0
   source = "./modules/github-runner"
 
   project_name        = var.project_name
