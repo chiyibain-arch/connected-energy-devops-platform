@@ -1,5 +1,5 @@
 environment  = "dev"
-location     = "eastus"
+location     = "eastus2"
 project_name = "connected-energy"
 
 vnet_address_space = ["10.10.0.0/16"]
@@ -16,7 +16,7 @@ acr_sku               = "Basic"
 log_retention_in_days = 30
 
 aks_node_count = 1
-aks_vm_size    = "Standard_B2s"
+aks_vm_size    = "Standard_D2s_v5"
 
 tags = {
   Environment = "Dev"
