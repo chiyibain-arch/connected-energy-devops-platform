@@ -47,6 +47,8 @@ resource "azurerm_subnet" "runners" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.10.17.0/24"]
+  # Disable implicit Internet egress; configure explicit NAT/Firewall before VM deployment.
+  default_outbound_access_enabled = false
 
   lifecycle {
     replace_triggered_by = [azurerm_virtual_network.main.id]
