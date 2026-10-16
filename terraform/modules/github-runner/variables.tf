@@ -35,7 +35,7 @@ variable "subnet_id" {
 variable "vm_size" {
   description = "Azure VM size for GitHub Actions runner"
   type        = string
-  default     = "Standard_B2s"
+  default     = "Standard_D2as_v7"
 }
 
 variable "admin_username" {
